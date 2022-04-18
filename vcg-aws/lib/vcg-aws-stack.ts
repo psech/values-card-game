@@ -15,6 +15,13 @@ export class VcgAwsStack extends cdk.Stack {
       versioned: false,
       bucketName: 'values-card-game',
 
+      websiteRoutingRules: [
+        {
+          httpRedirectCode: '302',
+          protocol: s3.RedirectProtocol.HTTPS,
+        },
+      ],
+
       websiteIndexDocument: 'index.html',
       websiteErrorDocument: 'index.html',
       publicReadAccess: true,
