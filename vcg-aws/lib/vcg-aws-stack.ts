@@ -17,6 +17,7 @@ export class VcgAwsStack extends cdk.Stack {
 
       websiteRoutingRules: [
         {
+          hostName: "values-card-game.s3.ap-southeast-2.amazonaws.com",
           httpRedirectCode: '302',
           protocol: s3.RedirectProtocol.HTTPS,
         },
