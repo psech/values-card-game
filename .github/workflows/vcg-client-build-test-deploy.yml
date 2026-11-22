@@ -1,64 +1,101 @@
-name: VCG Client build test deploy
+name: VCG build, test and deploy
 
+# Pull requests build and test only. Pushes to main also deploy.
 on:
-  push:
-    paths:
-      - 'vcg-client/**'
   pull_request:
     paths:
       - 'vcg-client/**'
+      - 'vcg-aws/**'
+      - '.nvmrc'
+      - '.github/workflows/vcg-client-build-test-deploy.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'vcg-client/**'
+      - 'vcg-aws/**'
+      - '.nvmrc'
+      - '.github/workflows/vcg-client-build-test-deploy.yml'
   workflow_dispatch:
 
-jobs:
-  build-test-client:
-    name: VCG Client build test deploy
-    runs-on: ubuntu-latest
+permissions:
+  contents: read
 
+jobs:
+  client:
+    name: Client build and test
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: vcg-client
-
+    env:
+      CI: true
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Read .nvmrc
-        run: echo ::set-output name=NODE_VERSION::$(cat ../.nvmrc | cut -c 1-2)
-        id: nvm
-      - name: Setup Node
-        uses: actions/setup-node@v2
+      - uses: actions/checkout@v7
+      # CRA 4 (webpack 4) builds on Node 14 without the OpenSSL workaround.
+      - uses: actions/setup-node@v7
         with:
-          node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
-      - name: Cache node modules
-        uses: actions/cache@v2
+          node-version-file: .nvmrc
+          cache: yarn
+          cache-dependency-path: vcg-client/yarn.lock
+      - run: yarn install --frozen-lockfile
+      - run: yarn test --watchAll=false
+      - run: yarn build
+      - uses: actions/upload-artifact@v7
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-      - name: Build
-        run: yarn build
-      - name: Test
-        run: echo Not quite ready yet
-      # - name: Configure AWS Credentials
-      #   uses: aws-actions/configure-aws-credentials@v1
-      #   with:
-      #     aws-access-key-id: ${{ secrets.FE_BUILD_AWS_ACCESS_KEY_ID }}
-      #     aws-secret-access-key: ${{ secrets.FE_BUILD_AWS_SECRET_ACCESS_KEY }}
-      #     aws-region: ${{ secrets.FE_BUILD_AWS_DEFAULT_REGION }}
-      - name: Deploy
-        uses: youyo/aws-cdk-github-actions@v2
+          name: site
+          path: vcg-client/build
+          if-no-files-found: error
+          retention-days: 7
+
+  infra:
+    name: Infrastructure test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vcg-aws
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          working_dir: 'vcg-aws'
-          cdk_subcommand: 'deploy'
-          cdk_stack: 'VcgAwsStack'
-          cdk_args: '--require-approval never'
-          actions_comment: false
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.FE_BUILD_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.FE_BUILD_AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{ secrets.FE_BUILD_AWS_DEFAULT_REGION }}
-      # - name: Invalidate Cloudfront
-      #   uses: chetan/invalidate-cloudfront-action@v1.3
-      #   env:
-      #     DISTRIBUTION: ${{ secrets.DISTRIBUTION }}
-      #     PATHS: "/ /index.html"
+          node-version-file: vcg-aws/.nvmrc
+          cache: yarn
+          cache-dependency-path: vcg-aws/yarn.lock
+      - run: yarn install --frozen-lockfile
+      - run: yarn test
+
+  deploy:
+    name: Deploy
+    needs: [client, infra]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # The AWS role trusts only jobs in this environment (see vcg-aws/lib/vcg-ci-stack.ts).
+    environment:
+      name: production
+      url: http://values-card-game.s3-website-ap-southeast-2.amazonaws.com/
+    concurrency:
+      group: production
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write # lets the job request GitHub's OIDC token for AWS
+    defaults:
+      run:
+        working-directory: vcg-aws
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: vcg-aws/.nvmrc
+          cache: yarn
+          cache-dependency-path: vcg-aws/yarn.lock
+      - run: yarn install --frozen-lockfile
+      - uses: actions/download-artifact@v8
+        with:
+          name: site
+          path: vcg-client/build
+      # No stored keys: swaps the OIDC token for short-lived role credentials.
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ap-southeast-2
+      - run: npx cdk deploy VcgAwsStack --require-approval never
