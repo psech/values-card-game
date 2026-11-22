@@ -1,18 +1,20 @@
 const STORAGE_NAME = 'vcg';
 
-const checkWindow = (cb) => typeof window !== undefined && cb();
-
-export function loadLocalStorage(defaultValue) {
-  return checkWindow(() => {
-    const saved = localStorage.getItem(STORAGE_NAME);
-    return saved !== null ? JSON.parse(saved) : defaultValue;
-  });
+// Storage can be unavailable (private mode, blocked site data) or hold
+// something we can't parse; in either case the game should still start.
+export function loadLocalStorage() {
+  try {
+    const saved = window.localStorage.getItem(STORAGE_NAME);
+    return saved === null ? null : JSON.parse(saved);
+  } catch {
+    return null;
+  }
 }
 
-export function saveLocalStorage(state) {
-  checkWindow(() => localStorage.setItem(STORAGE_NAME, JSON.stringify(state)));
-}
-
-export function resetLocalStorage() {
-  checkWindow(() => localStorage.removeItem(STORAGE_NAME));
+export function saveLocalStorage(value) {
+  try {
+    window.localStorage.setItem(STORAGE_NAME, JSON.stringify(value));
+  } catch {
+    // Progress just won't survive a reload.
+  }
 }

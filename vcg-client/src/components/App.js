@@ -1,201 +1,253 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { DragDropContext } from 'react-beautiful-dnd';
 import styled from 'styled-components';
-import initialData from '../data/initial-data';
+import { cards, deckOrder } from '../data/initial-data';
+import { loadLocalStorage, saveLocalStorage } from '../api/local-storage';
 import {
-  loadLocalStorage,
-  resetLocalStorage,
-  saveLocalStorage,
-} from '../api/local-storage';
-import Step from './Step';
+  PHASES,
+  RESULT_PHASE,
+  canMoveTo,
+  createInitialState,
+  goBack,
+  goNext,
+  moveCard,
+  phaseStatus,
+  restoreState,
+  serializeState,
+} from '../game/game';
+import Button from './Button';
+import Header from './Header';
+import Results from './Results';
+import SelectPhase from './SelectPhase';
+import SortPhase from './SortPhase';
+import { ArrowLeftIcon, ArrowRightIcon, CheckIcon } from './icons';
 
-const StepGroup = styled.div`
-  padding: 8px;
-  margin-bottom: 20px;
-
-  display: flex;
-`;
-
-const Header = styled.div`
-  margin: 8px;
-  padding: 8px;
-  border: 1px solid lightgrey;
-  border-radius: 2px;
-
-  background-color: WhiteSmoke;
-  position: sticky;
-  top: 0;
-
-  display: flex;
-  justify-content: space-between;
-`;
-
-const NextStepButton = styled.button`
-  background-color: #4caf50; /* Green */
-  border: none;
-  border-radius: 8px;
-  color: white;
-  padding: 15px 32px;
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 16px;
-  width: 80%;
-  margin-bottom: 30px;
-`;
-
-const Footer = styled.div`
-  height: 80px;
-
+const Page = styled.div`
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  min-height: 100vh;
+`;
+
+const Main = styled.main`
+  flex: 1;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 36px 20px 48px;
+`;
+
+const Intro = styled.div`
+  max-width: 620px;
+  margin: 0 auto 36px;
   text-align: center;
 `;
 
+const Eyebrow = styled.p`
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+`;
+
+const Title = styled.h1`
+  margin-top: 8px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(30px, 5vw, 44px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+`;
+
+const Lead = styled.p`
+  margin-top: 12px;
+  font-size: 16px;
+  color: var(--text-muted);
+`;
+
+const ActionBar = styled.div`
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -8px 24px -16px rgba(0, 0, 0, 0.25);
+`;
+
+const ActionInner = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 12px 20px;
+`;
+
+const Hint = styled.p`
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 14px;
+  text-align: center;
+  color: ${({ $complete }) =>
+    $complete ? 'var(--accent)' : 'var(--text-muted)'};
+  font-weight: ${({ $complete }) => ($complete ? 600 : 400)};
+`;
+
+const Footer = styled.footer`
+  padding: 28px 20px 32px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text-muted);
+
+  a {
+    color: var(--text);
+    text-decoration-color: var(--border-strong);
+    text-underline-offset: 2px;
+  }
+`;
+
+const loadInitialState = () =>
+  restoreState(loadLocalStorage()) ?? createInitialState();
+
 const App = () => {
-  const [state, setState] = useState(() => loadLocalStorage(initialData));
+  const [state, setState] = useState(loadInitialState);
+  const [draggingFrom, setDraggingFrom] = useState(null);
+  const isFirstRender = useRef(true);
 
-  const onDragEnd = (result) => {
-    const { source, destination, draggableId } = result;
+  const phase = PHASES[state.phase];
+  const status = phaseStatus(state);
+  const total = deckOrder.length;
 
-    if (!destination) {
+  useEffect(() => saveLocalStorage(serializeState(state)), [state]);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
       return;
     }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [state.phase]);
 
-    if (
-      source.droppableId === destination.droppableId &&
-      source.index === destination.index
-    ) {
-      return;
-    }
+  const onMove = (move) => setState((prev) => moveCard(prev, move));
 
-    const start = state.steps[source.droppableId];
-    const finish = state.steps[destination.droppableId];
-
-    if (start === finish) {
-      const newCardIds = [...start.cardIds];
-      newCardIds.splice(source.index, 1);
-      newCardIds.splice(destination.index, 0, draggableId);
-
-      const newStep = {
-        ...start,
-        cardIds: newCardIds,
-      };
-
-      setState((prevState) => ({
-        ...prevState,
-        steps: {
-          ...prevState.steps,
-          [newStep.id]: newStep,
-        },
-      }));
-
-      return;
-    }
-
-    // Moving from one list to another
-    const startCardIds = Array.from(start.cardIds);
-    startCardIds.splice(source.index, 1);
-    const newStart = {
-      ...start,
-      cardIds: startCardIds,
-    };
-
-    const finishCardIds = Array.from(finish.cardIds);
-    finishCardIds.splice(destination.index, 0, draggableId);
-    const newFinish = {
-      ...finish,
-      cardIds: finishCardIds,
-    };
-
-    setState((prevState) => ({
-      ...prevState,
-      steps: {
-        ...prevState.steps,
-        [newStart.id]: newStart,
-        [newFinish.id]: newFinish,
-      },
-    }));
-  };
-
-  const nextStep = () => {
-    setState((prevState) => ({
-      ...prevState,
-      currentStep: prevState.currentStep + 1,
-    }));
-  };
-
-  const scrollToBottom = () => {
-    window.scrollTo({
-      top: document.body.scrollHeight,
-      left: 0,
-      behavior: 'smooth',
+  const onDragEnd = ({ source, destination, draggableId }) => {
+    setDraggingFrom(null);
+    if (!destination) return;
+    onMove({
+      cardId: draggableId,
+      from: source.droppableId,
+      to: destination.droppableId,
+      index: destination.index,
     });
   };
 
-  const resetApplication = () => {
-    resetLocalStorage();
-    window.location.reload();
+  const restart = () => {
+    if (window.confirm('Start over? Your progress will be lost.')) {
+      setState(createInitialState());
+    }
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [state.currentStep]);
+  const isTargetFull =
+    !!phase.target &&
+    draggingFrom !== null &&
+    !canMoveTo(state, draggingFrom, phase.target);
 
-  useEffect(() => saveLocalStorage(state), [state]);
+  const isResult = state.phase === RESULT_PHASE;
 
   return (
-    <>
-      <Header>
-        <h1>Values Card Game</h1>
-        <button onClick={resetApplication}>Reset</button>
-      </Header>
-      <DragDropContext onDragEnd={onDragEnd}>
-        {Object.keys(state.stepGroups).map((stepGroupId, index) => {
-          if (index > state.currentStep) {
-            return true;
-          }
+    <Page>
+      <Header onRestart={restart} />
+      <Main>
+        <Intro>
+          <Eyebrow>
+            {isResult
+              ? 'Your result'
+              : `Round ${state.phase + 1}`}
+          </Eyebrow>
+          <Title>{phase.title}</Title>
+          <Lead>{phase.description}</Lead>
+        </Intro>
 
-          return (
-            <StepGroup key={stepGroupId}>
-              {state.stepGroups[stepGroupId].steps.map((stepId) => {
-                const step = state.steps[stepId];
-                const cards = step.cardIds.map((cardId) => state.cards[cardId]);
+        <DragDropContext
+          onDragStart={({ source }) => setDraggingFrom(source.droppableId)}
+          onDragEnd={onDragEnd}
+        >
+          {phase.id === 'sort' && (
+            <SortPhase
+              piles={state.piles}
+              cards={cards}
+              total={total}
+              onMove={onMove}
+            />
+          )}
+          {phase.target && (
+            <SelectPhase
+              phase={phase}
+              piles={state.piles}
+              cards={cards}
+              isTargetFull={isTargetFull}
+              onMove={onMove}
+            />
+          )}
+        </DragDropContext>
 
-                return <Step key={step.id} step={step} cards={cards} />;
-              })}
-            </StepGroup>
-          );
-        })}
-      </DragDropContext>
+        {isResult && (
+          <Results
+            piles={state.piles}
+            cards={cards}
+            total={total}
+            onBack={() => setState(goBack)}
+            onRestart={restart}
+          />
+        )}
+      </Main>
+
+      {!isResult && (
+        <ActionBar>
+          <ActionInner>
+            <Button
+              $variant="ghost"
+              onClick={() => setState(goBack)}
+              disabled={state.phase === 0}
+            >
+              <ArrowLeftIcon /> Back
+            </Button>
+            <Hint $complete={status.complete} role="status">
+              {status.complete && <CheckIcon size={16} />}
+              {status.hint}
+            </Hint>
+            <Button
+              $variant="primary"
+              onClick={() => setState(goNext)}
+              disabled={!status.complete}
+            >
+              {state.phase === RESULT_PHASE - 1 ? 'See results' : 'Continue'}
+              <ArrowRightIcon />
+            </Button>
+          </ActionInner>
+        </ActionBar>
+      )}
 
       <Footer>
-        {state.currentStep < Object.keys(state.stepGroups).length - 1 && (
-          <NextStepButton onClick={nextStep}>Next</NextStepButton>
-        )}
-        <span>
-          Copyright &copy; The John Maxwell Company{' '}
-          <a
-            href="https://www.johnmaxwell.com/"
-            target="_blank"
-            rel="noreferrer"
-          >
-            www.johnmaxwell.com
-          </a>
-          <br />
-          Designed and developed by Przemek Sech{' '}
-          <a
-            href="https://www.linkedin.com/in/przemyslaw-sech/"
-            target="_blank"
-            rel="noreferrer"
-          >
-            LinkedIn
-          </a>
-        </span>
+        Copyright &copy; The John Maxwell Company ·{' '}
+        <a href="https://www.johnmaxwell.com/" target="_blank" rel="noreferrer">
+          www.johnmaxwell.com
+        </a>
+        <br />
+        Designed and developed by Przemek Sech ·{' '}
+        <a
+          href="https://www.linkedin.com/in/przemyslaw-sech/"
+          target="_blank"
+          rel="noreferrer"
+        >
+          LinkedIn
+        </a>
       </Footer>
-    </>
+    </Page>
   );
 };
 
