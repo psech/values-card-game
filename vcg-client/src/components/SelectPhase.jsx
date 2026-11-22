@@ -9,6 +9,12 @@ const Grid = styled.div`
   max-width: 920px;
   margin: 0 auto;
 
+  /* The target's slots already make a big drop zone; stretching it to a
+     long source list would just add an empty panel. */
+  & > section:last-child {
+    align-self: start;
+  }
+
   @media (min-width: 720px) {
     grid-template-columns: 1fr 1fr;
     gap: 28px;
@@ -26,7 +32,6 @@ const SelectPhase = ({ phase, piles, cards, isTargetFull, onMove }) => {
         pileId={source}
         title={phase.sourceTitle}
         tone="muted"
-        scroll
         cards={toCards(piles[source])}
         emptyText="Nothing left here"
         getAction={(card) => ({

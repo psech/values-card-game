@@ -55,16 +55,11 @@ const List = styled.div`
   background: ${({ $isOver, $tone }) =>
     $isOver ? tones[$tone].over : 'transparent'};
   transition: background 0.2s ease;
-
-  ${({ $scroll }) =>
-    $scroll &&
-    css`
-      @media (min-width: 960px) {
-        max-height: min(62vh, 620px);
-        overflow-y: auto;
-        overflow-x: hidden;
-      }
-    `}
+  /* The page scrolls, not the pile: an inner scroll box ends up partly
+     behind the sticky action bar on short screens. 'clip' (unlike
+     'hidden') doesn't create a scroll container, and stops the deck-sized
+     drop placeholder from widening the page. */
+  overflow-x: clip;
 
   ${({ $disabled }) =>
     $disabled &&
@@ -114,7 +109,6 @@ const Pile = ({
   cards,
   limit,
   ranked = false,
-  scroll = false,
   isDropDisabled = false,
   emptyText = 'Drag cards here',
   getAction,
@@ -143,7 +137,6 @@ const Pile = ({
               {...provided.droppableProps}
               $isOver={snapshot.isDraggingOver}
               $tone={tone}
-              $scroll={scroll}
               $disabled={isDropDisabled}
             >
               {cards.map((card, index) => (

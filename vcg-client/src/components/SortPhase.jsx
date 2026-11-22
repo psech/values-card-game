@@ -239,7 +239,6 @@ const SortPhase = ({ piles, cards, total, onMove }) => {
           pileId={PILES.important}
           title="Matters to me"
           tone="accent"
-          scroll
           cards={toCards(piles[PILES.important])}
           emptyText="Values that matter to you go here"
           getAction={(card) => ({
@@ -260,7 +259,6 @@ const SortPhase = ({ piles, cards, total, onMove }) => {
           pileId={PILES.less}
           title="Less important"
           tone="muted"
-          scroll
           cards={toCards(piles[PILES.less])}
           emptyText="Values that matter less go here"
           getAction={(card) => ({
