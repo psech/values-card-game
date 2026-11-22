@@ -78,6 +78,10 @@ const GlobalStyle = createGlobalStyle`
 
   html {
     -webkit-text-size-adjust: 100%;
+    /* Keep focused elements clear of the sticky header and action bar when
+       the browser scrolls them into view. */
+    scroll-padding-top: 84px;
+    scroll-padding-bottom: 96px;
   }
 
   body {

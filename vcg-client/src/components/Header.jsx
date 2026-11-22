@@ -25,6 +25,12 @@ const Inner = styled.div`
   height: 68px;
   margin: 0 auto;
   padding: 0 20px;
+
+  /* The smallest phones (320px) need the space for the two buttons. */
+  @media (max-width: 359px) {
+    gap: 8px;
+    padding: 0 12px;
+  }
 `;
 
 const Brand = styled.div`
