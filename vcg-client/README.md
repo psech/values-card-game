@@ -1,6 +1,6 @@
 # vcg-client
 
-The game's front end: React 17, built with [Vite](https://vite.dev).
+The game's front end: React 19, built with [Vite](https://vite.dev).
 
 - `yarn start`: dev server on http://localhost:3000
 - `yarn test`: unit tests (Vitest)

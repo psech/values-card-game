@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { DragDropContext } from 'react-beautiful-dnd';
+import { DragDropContext } from '@hello-pangea/dnd';
 import styled from 'styled-components';
 import { cards, deckOrder } from '../data/initial-data';
 import { loadLocalStorage, saveLocalStorage } from '../api/local-storage';
@@ -141,7 +141,7 @@ const loadInitialState = () =>
 const App = () => {
   const [state, setState] = useState(loadInitialState);
   const [draggingFrom, setDraggingFrom] = useState(null);
-  const isFirstRender = useRef(true);
+  const shownPhase = useRef(state.phase);
 
   const phase = PHASES[state.phase];
   const status = phaseStatus(state);
@@ -149,11 +149,12 @@ const App = () => {
 
   useEffect(() => saveLocalStorage(serializeState(state)), [state]);
 
+  // Scroll up when the round changes, but not on load. Comparing with the
+  // last round shown (rather than skipping the first run) stays correct when
+  // StrictMode runs effects twice in development.
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
+    if (shownPhase.current === state.phase) return;
+    shownPhase.current = state.phase;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [state.phase]);
 

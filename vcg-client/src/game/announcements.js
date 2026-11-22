@@ -1,7 +1,7 @@
 import { cards } from '../data/initial-data';
 import { PHASES, PILES } from './game';
 
-// Screen-reader messages for drags. react-beautiful-dnd's defaults only say
+// Screen-reader messages for drags. The drag library's defaults only say
 // "item" and "list", so a blind player never hears which value they hold or
 // where it is going. Every message here names the card and the pile, as the
 // pile is titled on screen in the current round.
