@@ -1,7 +1,7 @@
-import { Draggable } from 'react-beautiful-dnd';
+import { Draggable } from '@hello-pangea/dnd';
 import styled, { css } from 'styled-components';
 
-// Spacing lives on the draggable wrapper as a margin: react-beautiful-dnd
+// Spacing lives on the draggable wrapper as a margin: the drag library
 // measures margins, but not flex/grid `gap`.
 const Wrapper = styled.div`
   margin-bottom: ${({ $variant }) => ($variant === 'compact' ? '8px' : '0')};

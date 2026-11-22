@@ -1,4 +1,4 @@
-import { Droppable } from 'react-beautiful-dnd';
+import { Droppable } from '@hello-pangea/dnd';
 import styled from 'styled-components';
 import { MIN_IMPORTANT, PILES } from '../game/game';
 import Button from './Button';

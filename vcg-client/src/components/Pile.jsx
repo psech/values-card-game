@@ -1,4 +1,4 @@
-import { Droppable } from 'react-beautiful-dnd';
+import { Droppable } from '@hello-pangea/dnd';
 import styled, { css } from 'styled-components';
 import Card from './Card';
 
@@ -106,11 +106,13 @@ const Empty = styled.p`
 // the player's place instead: focus the button now at the same spot in this
 // pile, so they can carry on down the list. If there is none to press (the
 // pile is empty, or the target is full), follow the card to its new pile.
-// React has committed the move by the next frame.
+// React has committed the move by the next frame. Piles are found by our
+// own data-pile attribute, not the drag library's, which changes between
+// libraries (react-beautiful-dnd's data-rbd-* became data-rfd-*).
 const keepFocus = (pileId, index, cardId, fromPointer) =>
   requestAnimationFrame(() => {
     const buttons = document.querySelectorAll(
-      `[data-rbd-droppable-id="${pileId}"] [data-card-action]`,
+      `[data-pile="${pileId}"] [data-card-action]`,
     );
     const sameSpot = buttons[Math.min(index, buttons.length - 1)];
     const target =
@@ -142,7 +144,7 @@ const Pile = ({
   getAction,
 }) => {
   return (
-    <Container aria-label={title}>
+    <Container aria-label={title} data-pile={pileId}>
       <Header>
         <Dot $tone={tone} />
         <Title>{title}</Title>
