@@ -26,6 +26,11 @@ const Podium = styled.ol`
 const Section = styled.section`
   max-width: 980px;
   margin: 44px auto 0;
+
+  /* On paper, keep each heading on the same page as its cards. */
+  @media print {
+    break-inside: avoid;
+  }
 `;
 
 const SectionTitle = styled.h2`

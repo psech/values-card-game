@@ -66,10 +66,22 @@ export const RESULT_PHASE = PHASES.length - 1;
 export const pileLimit = (pileId) =>
   PHASES.find((phase) => phase.target === pileId)?.limit;
 
-export const createInitialState = () => ({
+// Fisher–Yates. `random` is injectable so tests can make it deterministic.
+export const shuffle = (items, random = Math.random) => {
+  const result = [...items];
+  for (let i = result.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+};
+
+// Each game deals the deck in a fresh order, like the physical cards, so the
+// same values don't always come first. A saved game keeps its order.
+export const createInitialState = (random = Math.random) => ({
   phase: 0,
   piles: {
-    [PILES.deck]: [...deckOrder],
+    [PILES.deck]: shuffle(deckOrder, random),
     [PILES.important]: [],
     [PILES.less]: [],
     [PILES.top8]: [],

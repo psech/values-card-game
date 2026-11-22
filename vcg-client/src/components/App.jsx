@@ -15,6 +15,11 @@ import {
   restoreState,
   serializeState,
 } from '../game/game';
+import {
+  dragEndMessage,
+  dragStartMessage,
+  dragUpdateMessage,
+} from '../game/announcements';
 import Button from './Button';
 import Header from './Header';
 import Results from './Results';
@@ -134,7 +139,17 @@ const App = () => {
 
   const onMove = (move) => setState((prev) => moveCard(prev, move));
 
-  const onDragEnd = ({ source, destination, draggableId }) => {
+  const onDragStart = (start, provided) => {
+    setDraggingFrom(start.source.droppableId);
+    provided.announce(dragStartMessage(state, start));
+  };
+
+  const onDragUpdate = (update, provided) =>
+    provided.announce(dragUpdateMessage(state, update));
+
+  const onDragEnd = (result, provided) => {
+    const { source, destination, draggableId } = result;
+    provided.announce(dragEndMessage(state, result));
     setDraggingFrom(null);
     if (!destination) return;
     onMove({
@@ -173,7 +188,8 @@ const App = () => {
         </Intro>
 
         <DragDropContext
-          onDragStart={({ source }) => setDraggingFrom(source.droppableId)}
+          onDragStart={onDragStart}
+          onDragUpdate={onDragUpdate}
           onDragEnd={onDragEnd}
         >
           {phase.id === 'sort' && (
