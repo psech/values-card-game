@@ -10,7 +10,14 @@ import {
   phaseStatus,
   restoreState,
   serializeState,
+  shuffle,
 } from './game';
+
+// A small deterministic generator, so shuffle tests don't depend on luck.
+const seeded = (seed) => () => {
+  seed = (seed * 1103515245 + 12345) % 2 ** 31;
+  return seed / 2 ** 31;
+};
 
 const sortDeck = (state, importantCount) =>
   state.piles[PILES.deck].reduce(
@@ -32,11 +39,28 @@ describe('sort phase', () => {
   it('starts with every card in the deck', () => {
     const state = createInitialState();
     expect(state.phase).toBe(0);
-    expect(state.piles[PILES.deck]).toEqual(deckOrder);
+    expect([...state.piles[PILES.deck]].sort()).toEqual([...deckOrder].sort());
     expect(phaseStatus(state)).toEqual({
       complete: false,
       hint: `${deckOrder.length} cards left to sort`,
     });
+  });
+
+  it('deals the deck in a shuffled order', () => {
+    const deck = createInitialState(seeded(1)).piles[PILES.deck];
+    expect(deck).not.toEqual(deckOrder);
+    expect(createInitialState(seeded(1)).piles[PILES.deck]).toEqual(deck);
+    expect(createInitialState(seeded(2)).piles[PILES.deck]).not.toEqual(deck);
+  });
+
+  it('shuffles without losing or duplicating cards', () => {
+    const items = ['a', 'b', 'c', 'd', 'e'];
+    const shuffled = shuffle(items, seeded(7));
+    expect(shuffled).toHaveLength(items.length);
+    expect([...shuffled].sort()).toEqual(items);
+    expect(items).toEqual(['a', 'b', 'c', 'd', 'e']);
+    // random() returning just under 1 swaps each item with itself.
+    expect(shuffle(items, () => 0.9999)).toEqual(items);
   });
 
   it('needs the whole deck sorted before continuing', () => {

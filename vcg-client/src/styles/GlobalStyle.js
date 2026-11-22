@@ -1,4 +1,28 @@
-import { createGlobalStyle } from 'styled-components';
+import { createGlobalStyle, css } from 'styled-components';
+
+const darkTokens = css`
+  --bg: #121418;
+  --surface: #1b1e24;
+  --surface-2: #23272f;
+  --text: #ecebe7;
+  --text-muted: #9a9fa9;
+  --border: #2c3039;
+  --border-strong: #3b414c;
+
+  --accent: #2cc2b0;
+  --accent-hover: #4fd6c5;
+  --accent-soft: rgba(44, 194, 176, 0.13);
+  --accent-contrast: #0b1f1c;
+  --gold: #e3b45c;
+  --gold-soft: rgba(227, 180, 92, 0.14);
+  --muted-soft: #22252c;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 14px -2px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.7);
+
+  color-scheme: dark;
+`;
 
 const GlobalStyle = createGlobalStyle`
   :root {
@@ -9,7 +33,8 @@ const GlobalStyle = createGlobalStyle`
     --surface: #ffffff;
     --surface-2: #ece8df;
     --text: #1d2129;
-    --text-muted: #686d78;
+    /* At least 4.5:1 (WCAG AA) on every light surface, --surface-2 included. */
+    --text-muted: #62666f;
     --border: #e2ddd2;
     --border-strong: #cfc8ba;
 
@@ -32,29 +57,18 @@ const GlobalStyle = createGlobalStyle`
     color-scheme: light;
   }
 
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #121418;
-      --surface: #1b1e24;
-      --surface-2: #23272f;
-      --text: #ecebe7;
-      --text-muted: #9a9fa9;
-      --border: #2c3039;
-      --border-strong: #3b414c;
+  /* Dark colours apply when the device prefers dark and the player hasn't
+     forced light, or when they forced dark (see src/theme.js). Paper always
+     gets the light colours. */
+  @media screen and (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      ${darkTokens}
+    }
+  }
 
-      --accent: #2cc2b0;
-      --accent-hover: #4fd6c5;
-      --accent-soft: rgba(44, 194, 176, 0.13);
-      --accent-contrast: #0b1f1c;
-      --gold: #e3b45c;
-      --gold-soft: rgba(227, 180, 92, 0.14);
-      --muted-soft: #22252c;
-
-      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-      --shadow-md: 0 4px 14px -2px rgba(0, 0, 0, 0.5);
-      --shadow-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.7);
-
-      color-scheme: dark;
+  @media screen {
+    :root[data-theme='dark'] {
+      ${darkTokens}
     }
   }
 

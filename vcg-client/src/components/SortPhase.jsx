@@ -157,12 +157,28 @@ const DoneTitle = styled.h2`
   color: var(--text);
 `;
 
+const VisuallyHidden = styled.p`
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+`;
+
 const Deck = ({ deck, total, onSort }) => {
   const [top, next] = deck;
   const sorted = total - deck.length;
 
   return (
     <>
+      {/* The sort buttons keep focus, so a screen reader would otherwise
+          never hear which card came up next. Live regions stay quiet on
+          first render, so this speaks only after a card is sorted. */}
+      <VisuallyHidden aria-live="polite" aria-atomic="true">
+        {`Next card: ${top.title}. ${top.description}`}
+      </VisuallyHidden>
       <Progress>
         <span>
           {sorted} of {total} sorted

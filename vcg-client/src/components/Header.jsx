@@ -1,5 +1,6 @@
 import styled from 'styled-components';
 import Button from './Button';
+import ThemeToggle from './ThemeToggle';
 import { LogoMark, RestartIcon } from './icons';
 
 // Deliberately shows no stepper: players shouldn't know how many rounds of
@@ -37,6 +38,12 @@ const Brand = styled.div`
   white-space: nowrap;
 `;
 
+const Tools = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+`;
+
 const RestartLabel = styled.span`
   @media (max-width: 479px) {
     display: none;
@@ -50,16 +57,19 @@ const Header = ({ onRestart }) => (
         <LogoMark />
         <span>Values Card Game</span>
       </Brand>
-      <Button
-        $variant="ghost"
-        $size="sm"
-        onClick={onRestart}
-        aria-label="Start over"
-        data-print-hide
-      >
-        <RestartIcon size={16} />
-        <RestartLabel>Start over</RestartLabel>
-      </Button>
+      <Tools>
+        <ThemeToggle />
+        <Button
+          $variant="ghost"
+          $size="sm"
+          onClick={onRestart}
+          aria-label="Start over"
+          data-print-hide
+        >
+          <RestartIcon size={16} />
+          <RestartLabel>Start over</RestartLabel>
+        </Button>
+      </Tools>
     </Inner>
   </Bar>
 );

@@ -86,7 +86,6 @@ const SlotNumber = styled.span`
   font-variant-numeric: lining-nums tabular-nums;
   font-weight: 600;
   font-size: 15px;
-  opacity: 0.7;
 `;
 
 const Empty = styled.p`

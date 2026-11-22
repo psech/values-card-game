@@ -9,6 +9,16 @@
     />
     <meta name="theme-color" content="#f5f2ec" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#121418" media="(prefers-color-scheme: dark)" />
+    <script>
+      // Apply a saved light/dark choice before the first paint, so the page
+      // doesn't flash the device's theme first. Matches src/theme.js.
+      try {
+        var theme = localStorage.getItem('vcg-theme');
+        if (theme === 'light' || theme === 'dark') {
+          document.documentElement.dataset.theme = theme;
+        }
+      } catch (e) {}
+    </script>
     <link rel="icon" href="/favicon.ico" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />

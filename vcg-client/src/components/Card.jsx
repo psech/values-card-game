@@ -7,6 +7,12 @@ const Wrapper = styled.div`
   margin-bottom: ${({ $variant }) => ($variant === 'compact' ? '8px' : '0')};
   outline: none;
 
+  /* The card face draws its own rounded ring; without this the global
+     square :focus-visible outline shows around it as a second ring. */
+  &:focus-visible {
+    outline: none;
+  }
+
   &:focus-visible > div {
     box-shadow: 0 0 0 2px var(--accent), var(--shadow-md);
   }
@@ -120,6 +126,9 @@ const Rank = styled.span`
   font-variant-numeric: lining-nums tabular-nums;
   font-weight: 700;
   font-size: ${({ $variant }) => ($variant === 'featured' ? '20px' : '14px')};
+  /* Browsers drop backgrounds when printing; keep the badge's circle. */
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 `;
 
 const ActionButton = styled.button`
