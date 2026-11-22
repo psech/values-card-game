@@ -86,6 +86,26 @@ const ActionInner = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 12px 20px;
+
+  /* Between two buttons a small phone leaves the hint about 120px, and
+     "38 cards left to sort" wrapped onto four lines. Give it its own row. */
+  @media (max-width: 479px) {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas: 'hint hint hint' 'back . next';
+    row-gap: 8px;
+    padding: 10px 16px 12px;
+
+    & > p {
+      grid-area: hint;
+    }
+    & > button:first-child {
+      grid-area: back;
+    }
+    & > button:last-child {
+      grid-area: next;
+    }
+  }
 `;
 
 const Hint = styled.p`
@@ -161,7 +181,13 @@ const App = () => {
   };
 
   const restart = () => {
-    if (window.confirm('Start over? Your progress will be lost.')) {
+    // On the results screen the game is finished: there's no progress to
+    // lose, but the results go too.
+    const question =
+      state.phase === RESULT_PHASE
+        ? 'Start a new game? Your results will be cleared.'
+        : 'Start over? Your progress will be lost.';
+    if (window.confirm(question)) {
       setState(createInitialState());
     }
   };

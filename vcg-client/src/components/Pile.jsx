@@ -101,6 +101,35 @@ const Empty = styled.p`
   text-align: center;
 `;
 
+// A card's action button moves the card to another pile, so the button that
+// was pressed disappears and focus falls back to the top of the page. Keep
+// the player's place instead: focus the button now at the same spot in this
+// pile, so they can carry on down the list. If there is none to press (the
+// pile is empty, or the target is full), follow the card to its new pile.
+// React has committed the move by the next frame.
+const keepFocus = (pileId, index, cardId, fromPointer) =>
+  requestAnimationFrame(() => {
+    const buttons = document.querySelectorAll(
+      `[data-rbd-droppable-id="${pileId}"] [data-card-action]`,
+    );
+    const sameSpot = buttons[Math.min(index, buttons.length - 1)];
+    const target =
+      sameSpot && !sameSpot.disabled
+        ? sameSpot
+        : document.querySelector(`[data-card-action="${cardId}"]`);
+    if (!target) return;
+    if (fromPointer) {
+      // A mouse or touch user is looking at where they clicked: don't
+      // scroll the page, and don't draw a focus ring they didn't ask for.
+      // The ring comes back once they use the keyboard.
+      target.dataset.pointerFocus = '';
+      const clear = () => delete target.dataset.pointerFocus;
+      target.addEventListener('blur', clear, { once: true });
+      target.addEventListener('keydown', clear, { once: true });
+    }
+    target.focus({ preventScroll: fromPointer });
+  });
+
 const Pile = ({
   pileId,
   title,
@@ -138,16 +167,28 @@ const Pile = ({
               $tone={tone}
               $disabled={isDropDisabled}
             >
-              {cards.map((card, index) => (
-                <Card
-                  key={card.id}
-                  card={card}
-                  index={index}
-                  variant="compact"
-                  rank={ranked ? index + 1 : undefined}
-                  action={getAction?.(card)}
-                />
-              ))}
+              {cards.map((card, index) => {
+                const action = getAction?.(card);
+                return (
+                  <Card
+                    key={card.id}
+                    card={card}
+                    index={index}
+                    variant="compact"
+                    rank={ranked ? index + 1 : undefined}
+                    action={
+                      action && {
+                        ...action,
+                        onClick: (event) => {
+                          action.onClick(event);
+                          // Keyboard activation fires a click with detail 0.
+                          keepFocus(pileId, index, card.id, event.detail > 0);
+                        },
+                      }
+                    }
+                  />
+                );
+              })}
               {provided.placeholder}
               {Array.from({ length: freeSlots }, (_, i) => (
                 <Slot key={i}>

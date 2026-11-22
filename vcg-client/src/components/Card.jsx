@@ -156,6 +156,11 @@ const ActionButton = styled.button`
     opacity: 0.35;
     cursor: not-allowed;
   }
+
+  /* Focus moved here after a click elsewhere (see keepFocus in Pile). */
+  &[data-pointer-focus]:focus-visible {
+    outline: none;
+  }
 `;
 
 export const CardFace = ({
@@ -180,6 +185,7 @@ export const CardFace = ({
         disabled={action.disabled}
         aria-label={action.label}
         title={action.label}
+        data-card-action={card.id}
       >
         {action.icon}
       </ActionButton>
