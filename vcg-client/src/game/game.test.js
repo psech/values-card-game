@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { deckOrder } from '../data/initial-data';
 import {
   MIN_IMPORTANT,

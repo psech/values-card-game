@@ -18,11 +18,20 @@ The deploy job signs in to AWS with GitHub's OIDC token and a role that only thi
    Settings → Secrets and variables → Actions → Variables.
 1. Enable the workflow: Actions → "VCG build, test and deploy" → Enable workflow.
 
+## Development
+
+Both projects use Node 24 (see `.nvmrc`; run `nvm use`).
+
+In `vcg-client` (Vite):
+
+- `yarn start` runs the dev server on http://localhost:3000.
+- `yarn test` runs the unit tests (Vitest), `yarn lint` runs ESLint.
+- `yarn build` builds the site into `vcg-client/build`, which `vcg-aws` deploys.
+
 ## Deploy manually
 
-1. Build Client with `yarn build` in `vcg-client` directory.  
-   On Node 17+ run it as `NODE_OPTIONS=--openssl-legacy-provider yarn build` (CRA 4 / webpack 4).
-1. Deploy infrastructure (CDK v2, needs Node 20+; see `vcg-aws/.nvmrc`)
+1. Build Client with `yarn build` in `vcg-client` directory.
+1. Deploy infrastructure (CDK v2)
    1. Set environment variables
       - `AWS_ACCESS_KEY_ID`
       - `AWS_SECRET_ACCESS_KEY`
